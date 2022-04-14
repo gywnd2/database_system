@@ -1,0 +1,2 @@
+public class dbSlottedPage {
+}
