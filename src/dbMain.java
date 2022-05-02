@@ -18,9 +18,22 @@ public class dbMain {
             switch(selection){
                 case 1:
                     System.out.println("------- 테이블 생성 -------");
+                    System.out.print("테이블 명 : ");
+                    String tableName=scanner.nextLine();
+                    System.out.print("컬럼 개수 : ");
+                    int columnsCount=scanner.nextInt();
+                    String[] columns=new String[columnsCount];
+                    for (int i = 0; i<columnsCount; i++){
+                        System.out.printf("%d번째 컬럼 명과 자료형을 하나씩 입력하세요. ex) name varchar 10", i+1);
+                        columns[i]=scanner.nextLine();
+                    }
+                    System.out.print("테이블 "+tableName+"이 생성되었습니다.");
                     break;
                 case 2:
                     System.out.println("------- 레코드 삽입 -------");
+                    System.out.print("레코드를 삽입할 테이블명 입력 : ");
+                    tableName=scanner.nextLine();
+
                     break;
                 case 3:
                     System.out.println("------- 레코드 검색 -------");

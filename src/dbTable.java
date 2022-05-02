@@ -5,5 +5,6 @@ public class dbTable {
 
     // Constructor
     public dbTable() {
+        headerPage
     }
 }

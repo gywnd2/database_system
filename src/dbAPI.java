@@ -10,15 +10,15 @@ public class dbAPI {
     }
 
     // Insert record
-    public void insertRecord(dbTable table){
+    public void insertRecord(String tableName){
         // Insert
     }
 
     // Search record
-    public dbSlottedPage searchRecord(dbTable table){
+    public void searchRecord(dbTable table){
         // Search
-        dbSlottedPage slot=new dbSlottedPage();
-        return slot;
+//        dbSlottedPage slot=new dbSlottedPage();
+//        return slot;
     }
 
     // Column search
