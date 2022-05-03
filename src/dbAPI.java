@@ -1,3 +1,7 @@
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
 public class dbAPI {
     // Constructor
     public dbAPI(){}
@@ -24,6 +28,15 @@ public class dbAPI {
     // Column search
     public void columnSearch(String columnName){
         // Find by column
+    }
+
+    // Object to bytes
+    public byte[] convertObjectToBytes(Object obj) throws IOException {
+        ByteArrayOutputStream boas=new ByteArrayOutputStream();
+        try(ObjectOutputStream ois = new ObjectOutputStream(boas)){
+            ois.writeObject(obj);
+            return boas.toByteArray();
+        }
     }
 
 }

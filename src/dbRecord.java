@@ -1,15 +1,16 @@
 import java.util.Vector;
 
 public class dbRecord {
-    private int[] columns;
+    private static final int MAX_RECORD_SIZE=512;
+    private byte[] columns;
     private byte nullBitmap;
-    private Vector<Object> data;
+    private byte[] data;
 
     // Constructor
     public dbRecord(int columnsCount, byte nullBit, Vector<Object> recordData){
-        columns=new int[columnsCount];
+        columns=new byte[columnsCount];
         nullBitmap=nullBit;
-        data=recordData;
+
     }
 
     public void setRecordForm(){
