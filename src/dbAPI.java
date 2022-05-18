@@ -8,14 +8,23 @@ public class dbAPI {
 
     // API method
     // Create table
-    public dbTable createTable(){
+    public dbTable createTable(String tableName, String[] columnsInput, int columnsCount){
+        dbMetaData metaData=new dbMetaData(tableName, columnsInput, columnsCount);
         dbTable table=new dbTable();
         return table;
     }
 
     // Insert record
-    public void insertRecord(String tableName){
-        // Insert
+    public void insertRecord(dbTable table, String tableName, String[] columnsInput, dbMetaData metaData){
+        for (int i=0; i<table.pages.length; i++){
+            if (table.pages[i].records.length!=table.pages[i].MAX_RECORD_COUNT){
+                dbRecord newRecord=new dbRecord(metaData, columnsInput);
+                for (i=0; i<columnsInput.length; i++){
+                    
+                }
+                table.pages[i].records[table.pages[i].recordCount]=
+            }
+        }
     }
 
     // Search record

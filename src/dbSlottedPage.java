@@ -1,16 +1,18 @@
 import java.util.Vector;
 
 public class dbSlottedPage {
-    private static final int MAX_PAGE_SIZE=10240;
-    private byte recordCount;
-    private byte[] slots;
-    private dbRecord[] records;
+    public final static int MAX_RECORD_COUNT=5;
+    public byte recordCount;
+    public byte[] slots;
+    public int freeSpaceStartIdx;
+    public int freeSpaceEndIdx;
+    public dbRecord[] records;
 
     // Constructor
-    public dbSlottedPage(int size){
+    public dbSlottedPage(){
         recordCount=0;
-        slots=new byte[size];
-        records=new dbRecord[size];
+        slots=new byte[5];
+        records=new dbRecord[5];
     }
 
 }

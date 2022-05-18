@@ -1,8 +1,9 @@
 public class dbTable {
     // Table class members
-    private dbSlottedPage[] pages;
+    public dbSlottedPage[] pages;
 
     // Constructor
     public dbTable() {
+        pages=new dbSlottedPage[10];
     }
 }
