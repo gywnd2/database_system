@@ -1,13 +1,15 @@
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class dbMain {
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    public static void main(String[] args) throws IOException {
         HashMap<String, dbTable> db=new HashMap<>();
         dbAPI dbAPI=new dbAPI();
-        dbDataDict dbDataDict=new dbDataDict();
+        dbDataDict dataDict=new dbDataDict();
         boolean isInvalidInput=false;
 
         Scanner scanner=new Scanner(System.in);
@@ -45,8 +47,11 @@ public class dbMain {
                         columns[i]=scanner.nextLine();
                     }
                     // db에 테이블 생성
-                    db.put(tableName, dbAPI.createTable(tableName, columns, columnsCount, dbDataDict));
+                    db.put(tableName, dbAPI.createTable(tableName, columns, columnsCount, dataDict));
                     System.out.println("테이블 "+tableName+"이 생성되었습니다.");
+
+                    // 디스크에 쓰기
+                    dbAPI.writeDB(db, dataDict);
                     break;
                 case 2:
                     System.out.println("------- 레코드 삽입 -------");
@@ -54,7 +59,7 @@ public class dbMain {
                     tableName=scanner.nextLine();
                     // 컬럼 마다 컬럼 이름, 자료형, 최대 길이 출력해주고 입력받기
                     // 테이블 이름에 해당하는 메타데이터 가져오기
-                    dbMetaData metaData=dbDataDict.dict.get(tableName);
+                    dbMetaData metaData=dataDict.dict.get(tableName);
                     HashMap<String, String> columnsInput=new HashMap<>();
                     int idx=0;
                     // 컬럼; 자료형에 맞게 입력 받기
@@ -66,8 +71,10 @@ public class dbMain {
                         idx++;
                     }
                     // dbAPI로 입력 넘기기
-                    dbAPI.insertRecord(db.get(tableName), tableName, columnsInput,dbDataDict.dict.get(tableName));
-
+                    if(dbAPI.insertRecord(db.get(tableName), tableName, columnsInput,dataDict.dict.get(tableName))){
+                        // 디스크에 쓰기
+                        dbAPI.writeDB(db, dataDict);
+                    }
                     break;
                 case 3:
                     System.out.println("------- 레코드 검색 -------");
@@ -76,6 +83,8 @@ public class dbMain {
                     System.out.println("------- 컬럼 검색 -------");
                     break;
                 case 5:
+                    // 종료 시 기록
+                    dbAPI.writeDB(db, dataDict);
                     System.out.println("종료 합니다.");
                     System.exit(0);
                 default:

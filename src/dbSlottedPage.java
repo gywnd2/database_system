@@ -34,10 +34,6 @@ public class dbSlottedPage {
         for(int j : page){
             System.out.print(j+" ");
         }
-
-//        Byte[] bytes = (Byte[]) arrayList.toArray(); //  ArrayList -> Byte[]
-//
-//        arrayList = new ArrayList(Arrays.asList(bytes )); // Byte[] -> ArrayList
     }
 
 }
