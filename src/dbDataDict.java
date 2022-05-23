@@ -5,5 +5,6 @@ public class dbDataDict {
 
     // Constructor
     public dbDataDict(){
+        dict=new HashMap<>();
     }
 }

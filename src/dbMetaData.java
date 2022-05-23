@@ -6,7 +6,6 @@ public class dbMetaData {
     public HashMap<String, String> views;
     public String[] integrityConstraints;
     public HashMap<String, String> columns;
-    public HashMap<String, String> columnDataType;
 
     // Constructor
     public dbMetaData(String tableName, String[] columnsInput, int columnsCount){
@@ -16,7 +15,7 @@ public class dbMetaData {
         for (int i=0; i<columnsCount; i++){
             // name varchar 10
             String[] column=columnsInput[i].split(" ");
-            columns.put(column[0], column[2]);
+            columns.put(column[0], column[1]);
         }
     }
 }
