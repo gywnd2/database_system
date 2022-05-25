@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.HashMap;
 
-public class dbDataDict {
+public class dbDataDict implements Serializable {
     public HashMap<String, dbMetaData> dict;
 
     // Constructor

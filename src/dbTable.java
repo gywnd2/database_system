@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class dbTable {
+public class dbTable implements Serializable {
     // Table class members
     public ArrayList<dbSlottedPage> pages;
 

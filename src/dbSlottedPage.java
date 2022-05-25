@@ -1,8 +1,9 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class dbSlottedPage {
+public class dbSlottedPage  implements Serializable {
     public final static int MAX_PAGE_SIZE=100;
     public byte[] page;
     public byte recordCount=0;
