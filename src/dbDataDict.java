@@ -6,6 +6,7 @@ public class dbDataDict implements Serializable {
 
     // Constructor
     public dbDataDict(){
+        // Map 초기화
         dict=new HashMap<>();
     }
 }

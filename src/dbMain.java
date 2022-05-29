@@ -3,6 +3,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.InputMismatchException;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 public class dbMain {
@@ -83,7 +84,7 @@ public class dbMain {
                             dbAPI.db.get(tableName);
 
                             // 컬럼 마다 컬럼 이름, 자료형, 최대 길이 출력해주고 입력받기
-                            HashMap<String, String> columnsInput=new HashMap<>();
+                            LinkedHashMap<String, String> columnsInput=new LinkedHashMap<>();
                             int idx=0;
 
                             // 컬럼; 자료형에 맞게 입력 받기
@@ -115,7 +116,6 @@ public class dbMain {
                             System.out.print(tableName + "은(는) 존재하지 않습니다. 다른 이름을 입력하세요. : ");
                         }
                     }
-
                     break;
                 case 3:
                     System.out.println("------- 레코드 검색 -------");
@@ -127,7 +127,7 @@ public class dbMain {
                             dbAPI.db.get(tableName);
                             break;
                         }catch(NullPointerException e){
-                            System.out.print(tableName + "은(는) 존재하지 않는 테이블입니다. 다른 이름을 입력하세요. : ");
+                            System.out.print("존재하지 않는 테이블입니다. 다른 이름을 입력하세요. : ");
                         }
                     }
 
@@ -139,12 +139,17 @@ public class dbMain {
                     break;
                 case 4:
                     System.out.println("------- 컬럼 검색 -------");
-                    System.out.print("검색할 컬럼명 입력 : ");
+                    System.out.print("검색할 테이블명 입력 : ");
                     while(true){
                         tableName=scanner.nextLine();
                         try{
                             // 테이블이 존재하는지 조회 시도
                             dbAPI.db.get(tableName);
+
+                            // PK값 입력받기
+                            System.out.print("PK 값 입력 : ");
+                            pk=scanner.nextLine();
+
 
                             // 컬럼 이름 입력받아 검색
                             System.out.print("컬럼 이름 입력 : ");
@@ -152,18 +157,17 @@ public class dbMain {
                                 String columnName=scanner.nextLine();
                                 try{
                                     dbAPI.dbDataDict.dict.get(tableName).columns.get(columnName);
-                                    dbAPI.columnSearch(tableName, columnName);
+                                    dbAPI.columnSearch(tableName, columnName, pk);
                                     break;
                                 }catch(IllegalStateException e){
-                                    System.out.print(columnName + "은(는) 존재하지 않습니다. 다른 이름을 입력하세요. : ");
+                                    System.out.print("존재하지 않는 컬럼입니다. 다른 이름을 입력하세요. : ");
                                 }
                             }
                             break;
                         }catch(IllegalStateException e){
-                            System.out.print(tableName + "은(는) 존재하지 않습니다. 다른 이름을 입력하세요. : ");
+                            System.out.print("존재하지 않는 테이블입니다. 다른 이름을 입력하세요. : ");
                         }
                     }
-
                     break;
                 case 5:
                     // 종료 시 기록

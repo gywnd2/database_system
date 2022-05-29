@@ -2,6 +2,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class dbAPI {
@@ -18,18 +19,16 @@ public class dbAPI {
     // API method
     // Create table
     public void createTable(String tableName, String[] columnsInput, int columnsCount, String pk){
-        // Data dictionary에 메타 데이터 생성, dbTable 생성
+        // Data dictionary에 생성하고자 하는 Table의 메타 데이터를 생성하여 추가
         dbDataDict.dict.put(tableName, new dbMetaData(tableName, columnsInput, columnsCount));
         // PK 지정
         dbDataDict.dict.get(tableName).integrityConstraints.put("PK", pk);
         // 테이블 생성
         db.put(tableName, new dbTable());
-
-        System.out.println("columns : "+dbDataDict.dict.get(tableName).columns.keySet());
     }
 
     // Insert record
-    public boolean insertRecord(String tableName, HashMap<String, String> columnsInput) throws UnsupportedEncodingException {
+    public boolean insertRecord(String tableName, LinkedHashMap<String, String> columnsInput) throws UnsupportedEncodingException {
         // 페이지 순회 결과 기록
         boolean isPageFull=false;
         // 컬럼 부분 수정을 위한 인덱스
@@ -53,11 +52,13 @@ public class dbAPI {
             if (columnsInput.get(columnName).isEmpty()){
                 // 해당 컬럼의 nullBitMap 변경
                 nullBitMapString.replace(hashIdx, hashIdx+1, "1");
-                // Test
-                System.out.println("dbAPI -> nullBitMap 변경 : "+nullBitMapString);
             }
             // 컬럼 정보 추가
-            tmpRecordString+="00,"+columnsInput.get(columnName).length()+" ";
+            if(dataType.equals("varchar")){
+                tmpRecordString+="00,"+columnsInput.get(columnName).length()+" ";
+            }else{
+                tmpRecordString+="00,"+dbDataDict.dict.get(tableName).columnInputLength.get(columnName)+" ";
+            }
             // 인덱스 증가
             hashIdx++;
         }
@@ -106,7 +107,23 @@ public class dbAPI {
                 // 입력이 null이 아닐 경우
             }else{
                 // 데이터 추가
-                tmpRecordString+=" '"+columnsInput.get(columnName)+"'";
+                // 가변 자료형일 경우
+                if(dbDataDict.dict.get(tableName).columns.get(columnName).split("\\(")[0].equals("varchar")){
+                    tmpRecordString+=" '"+columnsInput.get(columnName)+"'";
+                // 고정길이 자료형일 경우
+                }else{
+                    String data="";
+                    for (int i=0; i<dbDataDict.dict.get(tableName).columnInputLength.get(columnName); i++){
+                        data+=" ";
+                    }
+                    char[] dataTmp=data.toCharArray();
+                    for(int i=0; i<columnsInput.get(columnName).length(); i++){
+                        dataTmp[i]=columnsInput.get(columnName).toCharArray()[i];
+                }
+                    data=new String(dataTmp);
+                    tmpRecordString+=" '"+data+"'";
+                }
+
             }
         }
 
@@ -114,7 +131,7 @@ public class dbAPI {
         byte[] tmpByteRecord=tmpRecordString.getBytes();
 
         // 새 레코드 객체 생성
-        dbRecord newRecord=new dbRecord(dbDataDict.dict.get(tableName), columnsInput, tmpByteRecord.length);
+        dbRecord newRecord=new dbRecord(tmpByteRecord.length);
         // 새 레코드 객체에 바이트 배열 복사
         for(int h=0; h<tmpByteRecord.length; h++){
             newRecord.record[h]=tmpByteRecord[h];
@@ -122,12 +139,6 @@ public class dbAPI {
 
         // 테이블의 페이지들을 순회
         for (int i=0; i<db.get(tableName).pages.size(); i++){
-            // Test
-            System.out.println("dbAPI -> "+db.get(tableName).pages.get(i).page);
-            System.out.println("dbAPI -> 레코드 개수 : "+db.get(tableName).pages.get(i).recordCount);
-            System.out.print("dbAPI -> 레코드 : ");
-            System.out.println(new String(newRecord.record, StandardCharsets.UTF_8));
-
             // 가득 차지 않은 페이지를 찾으면 그 페이지에 삽입
             // freeSpace가 레코드 길이보다 커야함
             if (db.get(tableName).pages.get(i).freeSpaceEndIdx-db.get(tableName).pages.get(i).freeSpaceStartIdx>newRecord.record.length){
@@ -194,6 +205,8 @@ public class dbAPI {
 
     // Search record
     public void searchRecord(String tableName, String pkValue){
+        boolean isRecordFound=false;
+
         // 컬럼 메타데이터에서 PK의 인덱스 찾기
         List<String> columnOrderList=new ArrayList<String>(dbDataDict.dict.get(tableName).columns.keySet());
         String column=dbDataDict.dict.get(tableName).integrityConstraints.get("PK");
@@ -201,7 +214,7 @@ public class dbAPI {
 
         System.out.println("-----------------------------------------------------------------");
         for (String columnName : dbDataDict.dict.get(tableName).columns.keySet()) {
-            System.out.printf("|%-20s|", columnName);
+            System.out.printf("|%-30s|", columnName);
         }
         System.out.println();
         System.out.println("-----------------------------------------------------------------");
@@ -210,78 +223,80 @@ public class dbAPI {
             String page = new String(slottedPage.page, StandardCharsets.UTF_8);
             String[] slots=page.substring(1, slottedPage.freeSpaceStartIdx).split(" ");
 
-            if(dbDataDict.dict.get(tableName).tableRecordCount!=0){
+            if(dbDataDict.dict.get(tableName).tableRecordCount!=0) {
                 // Slot 정보를 사용하여 레코드 출력
-                for (int i=0; i<slottedPage.recordCount; i++){
+                for (int i = 0; i < slottedPage.recordCount; i++) {
                     // Slot 추출
-                    String slot=page.substring(1, slottedPage.freeSpaceStartIdx);
-                    byte[] tmp=slot.getBytes(StandardCharsets.UTF_8);
-                    String record=page.substring(tmp[i]);
+                    String slot = page.substring(1, slottedPage.freeSpaceStartIdx);
+                    byte[] tmp = slot.getBytes(StandardCharsets.UTF_8);
+                    String record = page.substring(tmp[i]);
                     // Offset과 length 추출
-                    String[] columnInfoPart=record.split(" ");
+                    String[] columnInfoPart = record.split(" ");
                     // Offset과 length로 데이터 출력
-                    String[] columnInfo=columnInfoPart[columnOrder].split(",");
-                    if(record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0])+Integer.parseInt(columnInfo[1])).equals(pkValue)){
-                        System.out.printf("|%-20s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0])+Integer.parseInt(columnInfo[1])));
-                    }else{
-                        System.out.println("일치하는 레코드가 없습니다.");
+                    for (int j = 0; j < dbDataDict.dict.get(tableName).columns.size(); j++) {
+                        String[] pkColumnInfo = columnInfoPart[columnOrder].split(",");
+                        String[] columnInfo = columnInfoPart[j].split(",");
+                        if (record.substring(Integer.parseInt(pkColumnInfo[0]), Integer.parseInt(pkColumnInfo[0]) + Integer.parseInt(pkColumnInfo[1])).trim().equals(pkValue)) {
+                            isRecordFound = true;
+                            System.out.printf("|%-30s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0]) + Integer.parseInt(columnInfo[1])));
+                        }
                     }
-                    System.out.println();
                 }
-            } else {
-                System.out.println("테이블 " + tableName + "에는 아직 레코드가 없습니다.");
-                System.out.println();
             }
         }
+        if(!isRecordFound){
+            System.out.println("일치하는 레코드가 없습니다.");
+            System.out.println();
+        }
+        System.out.println();
         System.out.println("-----------------------------------------------------------------");
 
     }
 
     // Column search
-    public void columnSearch(String tableName, String columnName){
+    public void columnSearch(String tableName, String columnName, String pkValue){
+        boolean isRecordFound=false;
         try{
             // 컬럼 메타데이터에서 찾고자 하는 컬럼의 인덱스 찾기
             List<String> columnOrderList=new ArrayList<String>(dbDataDict.dict.get(tableName).columns.keySet());
             int columnOrder=columnOrderList.indexOf(columnName);
+            int pkColumnOrder=columnOrderList.indexOf(dbDataDict.dict.get(tableName).integrityConstraints.get("PK"));
+
+            System.out.println("-----------------------------------------------------------------");
+            System.out.printf("|%-30s|", columnName);
+            System.out.println();
+            System.out.println("-----------------------------------------------------------------");
 
             // 메타 데이터로 컬럼 순회
-            for(String c : dbDataDict.dict.get(tableName).columns.keySet()){
-                // 입력받은 컬럼 명과 같다면
-                if (dbDataDict.dict.get(tableName).integrityConstraints.get(c).equals(columnName)){
-                    System.out.println("-----------------------------------------------------------------");
-                    System.out.println(columnName+" "+dbDataDict.dict.get(tableName).columns.get(columnName));
-                    System.out.println("-----------------------------------------------------------------");
-                    for (dbSlottedPage slottedPage : db.get(tableName).pages) {
-                        // 페이지에서 슬롯을 먼저 읽어옴
-                        String page = new String(slottedPage.page, StandardCharsets.UTF_8);
-                        String[] slots=page.substring(1, slottedPage.freeSpaceStartIdx).split(" ");
+            for (dbSlottedPage slottedPage : db.get(tableName).pages) {
+                // 페이지에서 슬롯을 먼저 읽어옴
+                String page = new String(slottedPage.page, StandardCharsets.UTF_8);
 
-                        if(dbDataDict.dict.get(tableName).tableRecordCount!=0){
-                            // Slot 정보를 사용하여 레코드 출력
-                            for (int i=0; i<slottedPage.recordCount; i++){
-                                // Slot 추출
-                                String slot=page.substring(1, slottedPage.freeSpaceStartIdx);
-                                byte[] tmp=slot.getBytes(StandardCharsets.UTF_8);
-                                String record=page.substring(tmp[i]);
-                                // Offset과 length 추출
-                                String[] columnInfoPart=record.split(" ");
-                                // Offset과 length로 데이터 출력
-                                String[] columnInfo=columnInfoPart[columnOrder].split(",");
-                                if(columnInfo[1].equals("0")){
-                                    System.out.printf("|%-20s|", "NULL");
-                                }else{
-                                    System.out.printf("|%-20s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0])+Integer.parseInt(columnInfo[1])));
-                                }
-                                System.out.println();
-                            }
-                        } else {
-                            System.out.println("테이블 " + tableName + "의 컬럼 "+columnName+"에 해당하는 데이터가 없습니다.");
-                            System.out.println();
+                if (dbDataDict.dict.get(tableName).tableRecordCount != 0) {
+                    // Slot 정보를 사용하여 레코드 출력
+                    for (int i = 0; i < slottedPage.recordCount; i++) {
+                        // Slot 추출
+                        String slot = page.substring(1, slottedPage.freeSpaceStartIdx);
+                        byte[] tmp = slot.getBytes(StandardCharsets.UTF_8);
+                        String record = page.substring(tmp[i]);
+                        // Offset과 length 추출
+                        String[] columnInfoPart = record.split(" ");
+                        // Offset과 length로 데이터 출력
+                        String[] columnInfo = columnInfoPart[columnOrder].split(",");
+                        String[] pkColumnInfo = columnInfoPart[pkColumnOrder].split(",");
+                        // 입력값과 PK가 일치하는 레코드 출력
+                        if (record.substring(Integer.parseInt(pkColumnInfo[0]), Integer.parseInt(pkColumnInfo[0]) + Integer.parseInt(pkColumnInfo[1])).trim().equals(pkValue)) {
+                            isRecordFound = true;
+                            System.out.printf("|%-30s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0]) + Integer.parseInt(columnInfo[1])));
                         }
                     }
-                    System.out.println("-----------------------------------------------------------------");
                 }
             }
+            if(!isRecordFound) {
+                System.out.println("테이블 " + tableName + "의 컬럼 "+columnName+"에 해당하는 데이터가 없습니다.");
+            }
+            System.out.println();
+            System.out.println("-----------------------------------------------------------------");
         }catch (IllegalStateException e){
             System.out.println(tableName+"에는 해당하는 컬럼이 없습니다.");
         }
@@ -316,11 +331,19 @@ public class dbAPI {
     }
 
     public void showAllRecords(String tableName) {
+        // 컬럼 메타데이터에서 PK의 인덱스 찾기
+        List<String> columnOrderList=new ArrayList<String>(dbDataDict.dict.get(tableName).columns.keySet());
+        String pkColumn=dbDataDict.dict.get(tableName).integrityConstraints.get("PK");
+
         // 레코드 삽입 결과를 테이블 전체 출력을 통해 확인
         System.out.println("테이블 " + tableName + "에 총 " + dbDataDict.dict.get(tableName).tableRecordCount + "개의 레코드가 있습니다.");
         System.out.println("-----------------------------------------------------------------");
         for (String columnName : dbDataDict.dict.get(tableName).columns.keySet()) {
-            System.out.printf("|%-20s|", columnName);
+            if (columnName.equals(pkColumn)){
+                System.out.printf("|(PK) %-25s|", columnName);
+            }else{
+                System.out.printf("|%-30s|", columnName);
+            }
         }
         System.out.println();
         System.out.println("-----------------------------------------------------------------");
@@ -342,9 +365,9 @@ public class dbAPI {
                         // Offset과 length로 데이터 출력
                         String[] columnInfo=columnInfoPart[j].split(",");
                         if(columnInfo[1].equals("0")){
-                            System.out.printf("|%-20s|", "NULL");
+                            System.out.printf("|%-30s|", "NULL");
                         }else{
-                            System.out.printf("|%-20s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0])+Integer.parseInt(columnInfo[1])));
+                            System.out.printf("|%-30s|", record.substring(Integer.parseInt(columnInfo[0]), Integer.parseInt(columnInfo[0])+Integer.parseInt(columnInfo[1])));
                         }
                     }
                     System.out.println();

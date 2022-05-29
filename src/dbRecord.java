@@ -7,7 +7,7 @@ public class dbRecord implements Serializable {
     public byte[] record;
 
     // Constructor
-    public dbRecord(dbMetaData metaData, HashMap<String, String> columnsInput, int size){
+    public dbRecord(int size){
         record=new byte[size];
     }
 
